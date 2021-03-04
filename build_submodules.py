@@ -41,56 +41,6 @@ def find_vs():
                 return vcvars
     print('Cannot find a suitable version of Visual Studio (require 10.0-15.0 or 2017 or 2019)')
 
-def build_z3():
-
-    cwd = os.getcwd()
-
-    if not os.path.exists('submodules/z3'):
-        print("submodules/z3 not found. try 'git submodule update; git submodule update'")
-        exit(1)
-
-    os.chdir('submodules/z3')
-
-    ivydir = os.path.join(cwd,'ivy')
-
-
-    if platform.system() != 'Windows':
-        cmd = 'python scripts/mk_make.py --python --prefix {} --pypkgdir {}/'.format(cwd,ivydir)
-    else:
-        cmd = 'python scripts/mk_make.py -x --python --pypkgdir {}/'.format(ivydir)
-
-    do_cmd(cmd)
-
-    os.chdir('build')
-
-    if platform.system() == 'Windows':
-        do_cmd('"{}" & nmake'.format(find_vs()))
-    else:
-        do_cmd('make -j 4')
-        do_cmd('make install')
-
-    os.chdir(cwd)
-
-def install_z3():
-
-    make_dir_exist('ivy/lib')
-    make_dir_exist('ivy/z3')
-
-    if platform.system() == 'Windows':
-        do_cmd('copy submodules\\z3\\src\\api\\*.h ivy\\include')
-        do_cmd('copy "submodules\\z3\\src\\api\\c++\\*.h" ivy\\include')
-        do_cmd('copy submodules\\z3\\build\\*.dll ivy\\lib')
-        do_cmd('copy submodules\\z3\\build\\*.lib ivy\\lib')
-        do_cmd('copy submodules\\z3\\build\\*.dll ivy\\z3')
-        do_cmd('copy submodules\\z3\\build\\python\\z3\\*.py ivy\\z3')
-    elif platform.system() == 'Darwin':
-        do_cmd('cp include/*.h ivy/include')
-        do_cmd('cp lib/*.dylib ivy/lib')
-        do_cmd('cp lib/*.dylib ivy/z3')
-    else:
-        do_cmd('cp include/*.h ivy/include')
-        do_cmd('cp lib/*.so ivy/lib')
-        do_cmd('cp lib/*.so ivy/z3')
 
 def build_picotls():
         
@@ -198,8 +148,6 @@ def install_abc():
     os.chdir(cwd)
     
 if __name__ == "__main__":
-    build_z3()
-    install_z3()
     build_picotls()
     install_picotls()
 

@@ -25,10 +25,25 @@ from . import ivy_ast
 
 import sys
 
-# Following accounts for Z3 API symbols that are hidden as of Z3-4.5.0
+# These symbols exist in the z3 module within the z3 package. At some point they
+# were hidden from re-export, making us have to reach into z3.z3 to get
+# them. And in python3 the semantics of imports changed, so we have to do an
+# even more awkward importlib contortion here to get at them.
+#
+# This last part seems unintentional and there's a fix filed upstream to correct
+# it eventually: https://github.com/Z3Prover/z3/pull/5079
 
-from ivy.z3.z3 import _to_ast_array as z3_to_ast_array
-from ivy.z3.z3 import _to_expr_ref as z3_to_expr_ref
+if '_to_ast_array' in z3.__dict__ and '_to_expr_ref' in z3.__dict__:
+    z3_to_ast_array = z3._to_ast_array
+    z3_to_expr_ref = z3._to_expr_ref
+elif '_to_ast_array' in z3.z3.__dict__ and '_to_expr_ref' in z3.z3.__dict__:
+    z3_to_ast_array = z3.z3._to_ast_array
+    z3_to_expr_ref = z3.z3._to_expr_ref
+else:
+    import importlib
+    z3z3 = importlib.import_module("z3.z3", package="z3")
+    z3_to_ast_array = z3z3._to_ast_array
+    z3_to_expr_ref = z3z3._to_expr_ref
 
 use_z3_enums = True
 
