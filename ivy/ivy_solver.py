@@ -636,7 +636,6 @@ def formula_to_z3_int(fmla):
     assert False
 
 def formula_to_z3_closed(fmla):
-    print ("fmla: {}".format(fmla))
     z3_formula = formula_to_z3_int(fmla)
     variables = sorted(used_variables_ast(fmla))
     if len(variables) == 0:
