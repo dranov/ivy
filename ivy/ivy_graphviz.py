@@ -131,6 +131,7 @@ class AGraph(object):
         self.g.write(tmp_name)
         process = Popen(['dot','-Tdot',tmp_name], stdout=PIPE)
         txt,_ = process.communicate()
+        txt = txt.decode('utf-8')   # needed in Python 3
         exit_code = process.wait()
 #        txt = self.g.create(prog=prog,format='dot')
         self.g =  pydot.dot_parser.parse_dot_data(txt)[0]

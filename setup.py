@@ -29,7 +29,7 @@ setup(name='ms_ivy',
                     if platform.system() == 'Darwin' else
                     {'ivy':['include/*/*.ivy','include/*/*.h','include/*.h','lib/*.so','lib/*.a','z3/*.so','ivy2/s3/ivyc_s3','bin/*']}),
       install_requires=[
-          'pyparsing==2.1.4',
+          'pyparsing',
           'ply',
           'tarjan',
           'pydot',
