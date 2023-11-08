@@ -37,6 +37,8 @@ checked_action = iu.Parameter("action","")
 opt_trusted = iu.BooleanParameter("trusted",False)
 opt_mc = iu.BooleanParameter("mc",False)
 opt_trace = iu.BooleanParameter("trace",False)
+opt_model = iu.BooleanParameter("model",False)
+opt_shrink = iu.BooleanParameter("shrink",True) # whether to shrink the model for opt_model
 opt_separate = iu.BooleanParameter("separate",None)
 
 def display_cex(msg,ag):
@@ -190,7 +192,7 @@ class Checker(object):
         global failures
         failures += 1
         self.failed = True
-        return not (diagnose.get() or opt_trace.get()) # ignore failures if not diagnosing
+        return not (diagnose.get() or opt_trace.get() or opt_model.get()) # ignore failures if not diagnosing
     def unsat(self):
         if self.report_pass:
             print('PASS')
@@ -326,6 +328,27 @@ def check_fcs_in_state(mod,ag,post,fcs):
 #    iu.dbg('history.actions')
     gmc = lambda cls, final_cond: itr.small_model_clauses(cls,final_cond,shrink=diagnose.get())
     axioms = im.module.background_theory()
+    if opt_model.get():
+        clauses = history.post
+        clauses = lut.and_clauses(clauses,axioms)
+        ffcs = filter_fcs(fcs)
+        model = itr.small_model_clauses(clauses,ffcs,shrink=opt_shrink.get())
+        # res = history.satisfy(axioms,gmc,ffcs)
+        if model is not None:
+            # Rather than printing the model directly, which is just SMT-LIB
+            # we call the Trace printer, but without processing/"handling" the trace.
+            # This only prints the model.
+            failed = [c for c in ffcs if c.failed]
+            mclauses = lut.and_clauses(*([clauses] + [c.cond() for c in failed]))
+            vocab = lut.used_symbols_clauses(mclauses)
+            handler = ivy_trace.Trace(mclauses,model,vocab)
+            handler.end()
+            print str(handler)
+            # TODO: We'd also want to print the post-state, i.e. evaluate the model
+            # on the post-state, but I'm not sure how to do that.
+            # print "Post: {}".format(history.post) # this is not it.
+            exit(0)
+
     if opt_trace.get() or diagnose.get():
         clauses = history.post
         clauses = lut.and_clauses(clauses,axioms)
