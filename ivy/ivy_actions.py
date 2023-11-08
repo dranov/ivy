@@ -1,6 +1,7 @@
 #
 # Copyright (c) Microsoft Corporation. All Rights Reserved.
 #
+import sys
 from ivy_logic import Variable,Constant,Atom,Literal,App,sig,Iff,And,Or,Not,Implies,EnumeratedSort,Ite,Definition, is_atom, equals, Equals, Symbol,ast_match_lists, is_in_logic, Exists, RelationSort, is_boolean, is_app, is_eq, pto, close_formula,symbol_is_polymorphic,is_interpreted_symbol 
 
 from ivy_logic_utils import to_clauses, formula_to_clauses, substitute_constants_clause,\
@@ -1500,10 +1501,22 @@ class ReturnAction(object):
 class IgnoreAction(object):
     pass
 
-def match_annotation(action,annot,handler):
+def match_annotation(action,annot,handler,max_action_depth=sys.maxint):
+    '''
+    This functions can take a long time to produce a full trace, so
+    you can limit the trace "depth" by setting max_action_depth to indicate
+    how "deep" into the trace to proceed.
+
+    `max_action_depth = 0` prints only the arguments of the top-level action.
+    '''
+    _tracker = {'action_depth': max_action_depth}
+
     def recur(action,annot,env,pos=None):
         def show_me():
             print 'lineno: {} annot: {} pos: {}'.format(action.lineno if hasattr(action,'lineno') else None,annot,pos)
+
+        if _tracker['action_depth'] < 0:
+            return
 
         try:
             if isinstance(annot,RenameAnnotation):
@@ -1565,6 +1578,7 @@ def match_annotation(action,annot,handler):
                         if is_some:
                             code = Sequence(AssumeAction(And()),code)
                         recur(code,annot.elseb,env)
+                _tracker['action_depth'] -= 1
                 return
             if isinstance(action,ChoiceAction):
                 if isinstance(action,EnvAction) and hasattr(action,'label'):
@@ -1583,10 +1597,12 @@ def match_annotation(action,annot,handler):
                             callact.label = 'call ' + label
                             handler.handle(callact,env)
                         recur(act,ann,env,None)
+                        _tracker['action_depth'] -= 1
                         return
                 assert False,'problem in match_annotation'
             if isinstance(action,CallAction):
                 handler.handle(action,env)
+                _tracker['action_depth'] -= 1
                 callee = ivy_module.module.actions[action.args[0].rep]
                 seq = Sequence(IgnoreAction(),callee,ReturnAction())
                 recur(seq,annot,env,None)
@@ -1602,6 +1618,7 @@ def match_annotation(action,annot,handler):
             if isinstance(action,WhileAction):
                 expanded = action.expand(ivy_module.module,[])
                 recur(expanded,annot,env)
+                _tracker['action_depth'] -= 1
                 return
             if hasattr(action,'failed_action'):
     #            iu.dbg('annot')

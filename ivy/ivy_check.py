@@ -37,8 +37,9 @@ checked_action = iu.Parameter("action","")
 opt_trusted = iu.BooleanParameter("trusted",False)
 opt_mc = iu.BooleanParameter("mc",False)
 opt_trace = iu.BooleanParameter("trace",False)
-opt_model = iu.BooleanParameter("model",False)
-opt_shrink = iu.BooleanParameter("shrink",True) # whether to shrink the model for opt_model
+opt_action_depth = iu.Parameter("action_depth", None) # how deep to go in the trace
+opt_model = iu.BooleanParameter("model",False) # simply prints the model, doesn't produce a trace
+opt_shrink = iu.BooleanParameter("shrink",True) # whether to shrink the model when producing traces
 opt_separate = iu.BooleanParameter("separate",None)
 
 def display_cex(msg,ag):
@@ -328,32 +329,11 @@ def check_fcs_in_state(mod,ag,post,fcs):
 #    iu.dbg('history.actions')
     gmc = lambda cls, final_cond: itr.small_model_clauses(cls,final_cond,shrink=diagnose.get())
     axioms = im.module.background_theory()
-    if opt_model.get():
+    if opt_trace.get() or diagnose.get() or opt_model.get():
         clauses = history.post
         clauses = lut.and_clauses(clauses,axioms)
         ffcs = filter_fcs(fcs)
         model = itr.small_model_clauses(clauses,ffcs,shrink=opt_shrink.get())
-        # res = history.satisfy(axioms,gmc,ffcs)
-        if model is not None:
-            # Rather than printing the model directly, which is just SMT-LIB
-            # we call the Trace printer, but without processing/"handling" the trace.
-            # This only prints the model.
-            failed = [c for c in ffcs if c.failed]
-            mclauses = lut.and_clauses(*([clauses] + [c.cond() for c in failed]))
-            vocab = lut.used_symbols_clauses(mclauses)
-            handler = ivy_trace.Trace(mclauses,model,vocab)
-            handler.end()
-            print str(handler)
-            # TODO: We'd also want to print the post-state, i.e. evaluate the model
-            # on the post-state, but I'm not sure how to do that.
-            # print "Post: {}".format(history.post) # this is not it.
-            exit(0)
-
-    if opt_trace.get() or diagnose.get():
-        clauses = history.post
-        clauses = lut.and_clauses(clauses,axioms)
-        ffcs = filter_fcs(fcs)
-        model = itr.small_model_clauses(clauses,ffcs,shrink=True)
         if model is not None:
 #            iu.dbg('history.actions')
             failed = [c for c in ffcs if c.failed]
@@ -370,12 +350,22 @@ def check_fcs_in_state(mod,ag,post,fcs):
                 annot = clauses.annot
             else:
                 action,annot = thing
-            act.match_annotation(action,annot,handler)
+            if opt_model.get():
+                pass
+            elif not opt_model.get() and opt_action_depth.get() is not None:
+                # We call match_annotation with a limited depth, such that it
+                # prints the counter-model and the arguments to the action,
+                # but doesn't try to produce a full trace.
+                depth = int(opt_action_depth.get())
+                act.match_annotation(action,annot,handler, max_action_depth=depth)
+            else:
+                act.match_annotation(action,annot,handler)
+
             handler.end()
             ff = failed[0]
             handler.is_cti = (lut.formula_to_clauses(ff.lf.formula) if isinstance(ff,ConjChecker)
                               else None)
-            if not opt_trace.get():
+            if diagnose.get():
                 gui_art(handler)
             else:
                 print str(handler)
