@@ -73,7 +73,6 @@ module serdes(data,bytes,serializer,deserializer) = {
 >>>
 
 
-global {
 object std_serdes = {
 
     object serializer = {}
@@ -94,5 +93,4 @@ object std_serdes = {
 
     >>>
     }
-}
 }

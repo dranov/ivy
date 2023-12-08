@@ -287,9 +287,10 @@ in the Python 2.7 repository.
 
 2. Install dependencies
 
+        $ brew install python3
+        $ ln -s /usr/local/bin/python3 /usr/local/bin/python
         $ brew install cmake
-        $ sudo easy_install pip==20.2.3
-        $ sudo pip install --ignore-installed --force-reinstall pyparsing==2.1.4
+        $ brew install openssl
 
 3. Install Ivy:
 

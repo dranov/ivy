@@ -283,13 +283,13 @@ module string(domain,range) = {
 	    }
 
 	    template <>
-	    void  __randomize<`t`>( gen &g, const  z3::expr &v){
+	    void  __randomize<`t`>( gen &g, const  z3::expr &v, const std::string &sort_name){
 	        unsigned __sz = rand() % 4;
                 z3::expr val_expr = g.int_to_z3(g.sort("`domain`"),__sz);
                 z3::expr pred =  g.apply("`end`",v) == val_expr;
                 g.add_alit(pred);
 	        for (unsigned __i = 0; __i < __sz; ++__i)
-	            __randomize<`range`>(g,g.apply("`value`",v,g.int_to_z3(g.sort("`domain`"),__i)));
+	            __randomize<`range`>(g,g.apply("`value`",v,g.int_to_z3(g.sort("`domain`"),__i)),"`range`");
 	    }
 	    #endif
 

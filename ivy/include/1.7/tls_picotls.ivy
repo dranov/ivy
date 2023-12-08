@@ -111,7 +111,7 @@ module tls_gnutls(cid,index,bytes,extens,exten_ser,lower,upper) = {
 
     int tls_collect_extensions_cb(ptls_t* tls, struct st_ptls_handshake_properties_t* properties, uint16_t type)
     {
-        return type & 0xff00 == 0xff00;
+        return (type & 0xff00) == 0xff00;
     }
 
     int tls_collected_extensions_cb(ptls_t* tls, ptls_handshake_properties_t* properties,
